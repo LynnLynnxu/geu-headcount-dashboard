@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GEU编制分析看板 - 2026-06-02</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; background: #f0f2f5; color: #1a1a2e; }
+.dashboard { max-width: 1600px; margin: 0 auto; padding: 20px; }
+.header { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); color: white; padding: 32px 40px; border-radius: 16px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
+.header h1 { font-size: 28px; font-weight: 700; }
+.header .subtitle { font-size: 14px; opacity: .75; margin-top: 4px; }
+.header .date-badge { background: rgba(255,255,255,.15); padding: 8px 16px; border-radius: 20px; font-size: 13px; }
+.kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+.kpi-card { background: white; border-radius: 12px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,.08); position: relative; overflow: hidden; }
+.kpi-card .label { font-size: 13px; color: #666; margin-bottom: 8px; }
+.kpi-card .value { font-size: 36px; font-weight: 700; line-height: 1.2; }
+.kpi-card .sub { font-size: 12px; color: #999; margin-top: 4px; }
+.kpi-card .trend-up { color: #e74c3c; }
+.kpi-card .trend-down { color: #27ae60; }
+.kpi-card.warn { border-left: 4px solid #e74c3c; }
+.kpi-card.info { border-left: 4px solid #3498db; }
+.kpi-card.success { border-left: 4px solid #27ae60; }
+.kpi-card.caution { border-left: 4px solid #f39c12; }
+.row { display: grid; grid-template-columns: repeat(auto-fit, minmax(480px, 1fr)); gap: 20px; margin-bottom: 20px; }
+.panel { background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,.08); overflow: hidden; }
+.panel-header { padding: 20px 24px 0; font-size: 16px; font-weight: 600; color: #1a1a2e; display: flex; align-items: center; gap: 8px; }
+.panel-header .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.panel-header .dot.red { background: #e74c3c; }
+.panel-header .dot.blue { background: #3498db; }
+.panel-header .dot.green { background: #27ae60; }
+.panel-header .dot.orange { background: #f39c12; }
+.panel-body { padding: 16px 24px 24px; }
+.panel canvas { max-height: 360px; }
+.full-width { grid-column: 1 / -1; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #eee; }
+th { background: #f8f9fa; font-weight: 600; color: #555; font-size: 12px; text-transform: uppercase; }
+tr:hover { background: #f8f9ff; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+.badge-green { background: #d5f5e3; color: #27ae60; }
+.badge-yellow { background: #fef9e7; color: #f39c12; }
+.badge-red { background: #fadbd8; color: #e74c3c; }
+.badge-blue { background: #d6eaf8; color: #2980b9; }
+.alert-box { background: #fef9e7; border-left: 4px solid #f39c12; padding: 16px 20px; border-radius: 8px; margin-bottom: 12px; font-size: 13px; }
+.alert-box.danger { background: #fdedec; border-left-color: #e74c3c; }
+.alert-box h4 { margin-bottom: 6px; font-size: 14px; }
+.progress-bar { height: 8px; background: #eee; border-radius: 4px; overflow: hidden; margin-top: 4px; }
+.progress-bar .fill { height: 100%; border-radius: 4px; transition: width 0.5s; }
+</style>
+</head>
+<body>
+<div class="dashboard">
+
+<!-- HEADER -->
+<div class="header">
+  <div>
+    <h1>📊 GEU 编制分析看板</h1>
+    <div class="subtitle">数据来源：20260602-HRMS编制表-GEU · 高链/欧洲区</div>
+  </div>
+  <div class="date-badge">📅 2026年6月2日</div>
+</div>
+
+<!-- KPI CARDS -->
+<div class="kpi-grid">
+  <div class="kpi-card info">
+    <div class="label">编制总数</div>
+    <div class="value">1,136</div>
+    <div class="sub">所有岗位编制</div>
+  </div>
+  <div class="kpi-card success">
+    <div class="label">在职人数</div>
+    <div class="value">789</div>
+    <div class="sub">实际在岗员工</div>
+  </div>
+  <div class="kpi-card warn">
+    <div class="label">空缺编制</div>
+    <div class="value">347</div>
+    <div class="sub">空编 330 · 在途 17</div>
+  </div>
+  <div class="kpi-card warn">
+    <div class="label">满编率</div>
+    <div class="value">69.5<span style="font-size:20px">%</span></div>
+    <div class="sub">低于75%警戒线</div>
+  </div>
+  <div class="kpi-card caution">
+    <div class="label">管幅比</div>
+    <div class="value">16.2<span style="font-size:20px">:1</span></div>
+    <div class="sub">P岗743人 / M岗46人</div>
+  </div>
+  <div class="kpi-card info">
+    <div class="label">M岗满编率</div>
+    <div class="value">70.9<span style="font-size:20px">%</span></div>
+    <div class="sub">编制86 · 在职61</div>
+  </div>
+</div>
+
+<!-- ALERTS -->
+<div class="row">
+  <div class="full-width" style="display:flex;gap:12px;flex-wrap:wrap;">
+    <div class="alert-box danger" style="flex:1;min-width:300px;">
+      <h4>⚠️ 高风险：ES 西班牙区满编率仅 10.0%</h4>
+      编制80人，仅8人在职，72个空缺。建议立即排查招聘进度或编制合理性。
+    </div>
+    <div class="alert-box danger" style="flex:1;min-width:300px;">
+      <h4>⚠️ 高风险：海外满编率 63.4%，远低于国内 81.9%</h4>
+      海外766编制缺280人，国内370编制仅缺67人。人力资源缺口主要集中在海外区域。
+    </div>
+    <div class="alert-box" style="flex:1;min-width:300px;">
+      <h4>⚠️ 注意：操作族满编率仅 57.8%</h4>
+      325编制仅188人在职，缺口137人。作为最大职族，满编率不足六成将直接影响业务运营。
+    </div>
+    <div class="alert-box" style="flex:1;min-width:300px;">
+      <h4>⚠️ 注意：B类骨干满编率 65.7%</h4>
+      108编制仅71人在职，缺口37人。中层骨干储备不足，影响团队承上启下能力。
+    </div>
+    <div class="alert-box" style="flex:1;min-width:300px;">
+      <h4>⚠️ 注意：职级不一致率 31.9%</h4>
+      252名在职员工的实际职级与编制职级不匹配，需排查编制校准或晋升停滞问题。
+    </div>
+  </div>
+</div>
+
+<!-- ROW 1: Level Distribution -->
+<div class="row">
+  <div class="panel">
+    <div class="panel-header"><span class="dot blue"></span>编制职级分布 vs 在职人员职级分布</div>
+    <div class="panel-body"><canvas id="chartLevelCompare"></canvas></div>
+  </div>
+  <div class="panel">
+    <div class="panel-header"><span class="dot orange"></span>各职级满编率</div>
+    <div class="panel-body"><canvas id="chartLevelFillRate"></canvas></div>
+  </div>
+</div>
+
+<!-- ROW 2: Organization + Overseas -->
+<div class="row">
+  <div class="panel">
+    <div class="panel-header"><span class="dot green"></span>三级组织编制 & 满编率</div>
+    <div class="panel-body"><canvas id="chartOrg"></canvas></div>
+  </div>
+  <div class="panel">
+    <div class="panel-header"><span class="dot blue"></span>海外 vs 国内</div>
+    <div class="panel-body" style="display:flex;justify-content:center;"><div style="max-width:420px;width:100%;"><canvas id="chartOverseas"></canvas></div></div>
+  </div>
+</div>
+
+<!-- ROW 3: PM + Job Category -->
+<div class="row">
+  <div class="panel">
+    <div class="panel-header"><span class="dot orange"></span>P岗 vs M岗</div>
+    <div class="panel-body" style="display:flex;justify-content:center;"><div style="max-width:420px;width:100%;"><canvas id="chartPM"></canvas></div></div>
+  </div>
+  <div class="panel">
+    <div class="panel-header"><span class="dot blue"></span>职类分布 TOP15 & 满编率</div>
+    <div class="panel-body"><canvas id="chartJobCategory"></canvas></div>
+  </div>
+</div>
+
+<!-- ROW 4: Family + ABC -->
+<div class="row">
+  <div class="panel">
+    <div class="panel-header"><span class="dot purple"></span>职族分布</div>
+    <div class="panel-body" style="display:flex;justify-content:center;"><div style="max-width:420px;width:100%;"><canvas id="chartFamily"></canvas></div></div>
+  </div>
+  <div class="panel">
+    <div class="panel-header"><span class="dot red"></span>ABC 分类</div>
+    <div class="panel-body"><canvas id="chartABC"></canvas></div>
+  </div>
+</div>
+
+<!-- ROW 5: Details -->
+<div class="row">
+  <div class="panel">
+    <div class="panel-header"><span class="dot orange"></span>三级组织满编率明细</div>
+    <div class="panel-body" id="orgDetailTable"></div>
+  </div>
+  <div class="panel">
+    <div class="panel-header"><span class="dot red"></span>领色分布 & 在职状态</div>
+    <div class="panel-body" style="display:flex;gap:20px;">
+      <div style="flex:1"><canvas id="chartCollar"></canvas></div>
+      <div style="flex:1"><canvas id="chartStatus"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- ROW 6: Full Level Detail Table -->
+<div class="row">
+  <div class="panel full-width">
+    <div class="panel-header"><span class="dot blue"></span>职级满编率明细表</div>
+    <div class="panel-body" id="levelDetailTable"></div>
+  </div>
+</div>
+
+</div>
+
+<script>
+const DATA = {
+  "overview": {"total_positions":1136,"filled":789,"vacant":347,"fill_rate":69.5,"mgmt_count":46,"ic_count":743,"span_ratio":16.2,"title":"20260602-HRMS编制表-GEU"},
+  "status_detail": {"在职":789,"空编":330,"在途":17},
+  "budget_levels": [
+    {"level":"P1-1","count":44},{"level":"P1-2","count":428},{"level":"P1-3","count":253},
+    {"level":"P2-1","count":108},{"level":"P2-2","count":111},{"level":"P2-3","count":61},
+    {"level":"P3-1","count":38},{"level":"P3-2","count":7},
+    {"level":"M2-1","count":7},{"level":"M2-2","count":40},{"level":"M2-3","count":13},
+    {"level":"M3-1","count":16},{"level":"M3-2","count":4},{"level":"M3-3","count":4},{"level":"M4-1","count":2}
+  ],
+  "incumbent_levels": [
+    {"level":"P1-1","count":86},{"level":"P1-2","count":317},{"level":"P1-3","count":115},
+    {"level":"P2-1","count":74},{"level":"P2-2","count":86},{"level":"P2-3","count":33},
+    {"level":"P3-1","count":25},{"level":"P3-2","count":2},
+    {"level":"M2-1","count":10},{"level":"M2-2","count":14},{"level":"M2-3","count":4},
+    {"level":"M3-1","count":12},{"level":"M3-2","count":2},{"level":"M3-3","count":2},{"level":"M4-1","count":2}
+  ],
+  "level_fill_rate": [
+    {"level":"P1-1","budget":44,"filled":25,"rate":56.8},
+    {"level":"P1-2","budget":428,"filled":267,"rate":62.4},
+    {"level":"P1-3","budget":253,"filled":188,"rate":74.3},
+    {"level":"P2-1","budget":108,"filled":77,"rate":71.3},
+    {"level":"P2-2","budget":111,"filled":96,"rate":86.5},
+    {"level":"P2-3","budget":61,"filled":46,"rate":75.4},
+    {"level":"P3-1","budget":38,"filled":25,"rate":65.8},
+    {"level":"P3-2","budget":7,"filled":4,"rate":57.1},
+    {"level":"M2-1","budget":7,"filled":4,"rate":57.1},
+    {"level":"M2-2","budget":40,"filled":26,"rate":65.0},
+    {"level":"M2-3","budget":13,"filled":9,"rate":69.2},
+    {"level":"M3-1","budget":16,"filled":13,"rate":81.2},
+    {"level":"M3-2","budget":4,"filled":3,"rate":75.0},
+    {"level":"M3-3","budget":4,"filled":4,"rate":100.0},
+    {"level":"M4-1","budget":2,"filled":2,"rate":100.0}
+  ],
+  "org_level3": [
+    {"org":"FR 法国区","total":310,"filled":221,"rate":71.3},
+    {"org":"IT 意大利区","total":172,"filled":119,"rate":69.2},
+    {"org":"NL 荷兰区","total":168,"filled":111,"rate":66.1},
+    {"org":"EU技术部","total":115,"filled":105,"rate":91.3},
+    {"org":"EU人力资源部","total":99,"filled":68,"rate":68.7},
+    {"org":"CS 客户服务部","total":97,"filled":84,"rate":86.6},
+    {"org":"ES 西班牙区","total":80,"filled":8,"rate":10.0},
+    {"org":"TM 终端管理部","total":20,"filled":15,"rate":75.0},
+    {"org":"ND 网络发展部","total":20,"filled":15,"rate":75.0},
+    {"org":"TP 中转规划部","total":18,"filled":14,"rate":77.8},
+    {"org":"IC 跨境客户部","total":17,"filled":12,"rate":70.6},
+    {"org":"BM 品牌市场部","total":10,"filled":9,"rate":90.0},
+    {"org":"SD 战略运营部","total":9,"filled":7,"rate":77.8},
+    {"org":"AS 审计监察部","total":1,"filled":1,"rate":100.0}
+  ],
+  "overseas": [
+    {"location":"海外","total":766,"filled":486,"rate":63.4},
+    {"location":"国内","total":370,"filled":303,"rate":81.9}
+  ],
+  "collar": [
+    {"type":"白领","total":797,"filled":593,"rate":74.4},
+    {"type":"灰领","total":53,"filled":38,"rate":71.7},
+    {"type":"蓝领","total":222,"filled":120,"rate":54.1},
+    {"type":"未知","total":64,"filled":38,"rate":59.4}
+  ]
+};
+
+Chart.defaults.font.family = "-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif";
+Chart.defaults.font.size = 12;
+const colors = {blue:'#3498db', green:'#27ae60', red:'#e74c3c', orange:'#f39c12', purple:'#8e44ad', teal:'#1abc9c', dark:'#2c3e50'};
+
+// 1. Level Comparison Chart
+(function(){
+  const budget = DATA.budget_levels;
+  const incumbent = DATA.incumbent_levels;
+  const allLevels = [...new Set([...budget.map(d=>d.level), ...incumbent.map(d=>d.level)])];
+  const orderMap = {};
+  allLevels.forEach((l,i) => {
+    const isM = l.startsWith('M');
+    const parts = l.slice(1).split('-');
+    const major = parseInt(parts[0]) + (isM ? 100 : 0);
+    const minor = parseInt(parts[1]||0);
+    orderMap[l] = major * 10 + minor;
+  });
+  const sorted = allLevels.sort((a,b) => orderMap[a] - orderMap[b]);
+  
+  new Chart(document.getElementById('chartLevelCompare'), {
+    type: 'bar',
+    data: {
+      labels: sorted,
+      datasets: [
+        {label:'编制数', data: sorted.map(l => (budget.find(d=>d.level===l)||{}).count||0), backgroundColor:'rgba(52,152,219,.7)', borderRadius:4},
+        {label:'在职数', data: sorted.map(l => (incumbent.find(d=>d.level===l)||{}).count||0), backgroundColor:'rgba(39,174,96,.7)', borderRadius:4}
+      ]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:true,
+      plugins: {legend:{position:'top'}},
+      scales: {y:{beginAtZero:true, title:{display:true,text:'人数'}}}
+    }
+  });
+})();
+
+// 2. Fill Rate by Level
+(function(){
+  const levels = DATA.level_fill_rate;
+  const fillColor = (r) => r >= 80 ? 'rgba(39,174,96,.7)' : r >= 60 ? 'rgba(243,156,18,.7)' : 'rgba(231,76,60,.7)';
+  new Chart(document.getElementById('chartLevelFillRate'), {
+    type: 'bar',
+    data: {
+      labels: levels.map(d=>d.level),
+      datasets: [{
+        label:'满编率 %', data: levels.map(d=>d.rate),
+        backgroundColor: levels.map(d=>fillColor(d.rate)), borderRadius:4
+      }]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:true,
+      indexAxis:'y',
+      plugins: {
+        legend:{display:false},
+        annotation: false
+      },
+      scales: {
+        x:{beginAtZero:true, max:105, title:{display:true,text:'满编率 (%)'}, ticks:{callback:v=>v+'%'}}
+      }
+    }
+  });
+})();
+
+// 3. Organization
+(function(){
+  const orgs = DATA.org_level3;
+  const fillColor2 = (r) => r >= 80 ? 'rgba(39,174,96,.7)' : r >= 60 ? 'rgba(243,156,18,.7)' : 'rgba(231,76,60,.7)';
+  new Chart(document.getElementById('chartOrg'), {
+    type: 'bar',
+    data: {
+      labels: orgs.map(d=>d.org),
+      datasets: [
+        {label:'编制', data:orgs.map(d=>d.total), backgroundColor:'rgba(52,152,219,.5)', borderRadius:4},
+        {label:'在职', data:orgs.map(d=>d.filled), backgroundColor:orgs.map(d=>fillColor2(d.rate)), borderRadius:4}
+      ]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:true,
+      indexAxis:'y',
+      plugins:{legend:{position:'top'}},
+      scales:{x:{beginAtZero:true, title:{display:true,text:'人数'}}}
+    }
+  });
+})();
+
+// 4. Overseas vs Domestic
+(function(){
+  const ovs = DATA.overseas;
+  new Chart(document.getElementById('chartOverseas'), {
+    type: 'doughnut',
+    data: {
+      labels: ovs.map(d=>d.location),
+      datasets: [{
+        data: ovs.map(d=>d.total),
+        backgroundColor: ['rgba(52,152,219,.7)','rgba(26,188,156,.7)'],
+        borderWidth: 2, borderColor:'#fff'
+      }]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:true,
+      plugins:{
+        legend:{position:'bottom'},
+        tooltip:{callbacks:{label:ctx => `${ctx.label}: ${ctx.raw}人 (满编率${ovs[ctx.dataIndex].rate}%)`}}
+      }
+    }
+  });
+})();
+
+// 5. P岗 vs M岗
+(function(){
+  new Chart(document.getElementById('chartPM'), {
+    type: 'doughnut',
+    data: {
+      labels: ['P岗 (员工)','M岗 (管理者)'],
+      datasets: [{
+        data: [1050, 86],
+        backgroundColor: ['rgba(52,152,219,.7)','rgba(142,68,173,.7)'],
+        borderWidth: 2, borderColor:'#fff'
+      }]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:true,
+      plugins:{
+        legend:{position:'bottom'}
+      }
+    }
+  });
+})();
+
+// 6. Job Category TOP 15
+(function(){
+  const cats = [
+    {category:"操作类",total:267,filled:148,rate:55.4},{category:"终端类",total:153,filled:105,rate:68.6},
+    {category:"客服类",total:95,filled:82,rate:86.3},{category:"质控类",total:74,filled:57,rate:77.0},
+    {category:"操作管理类",total:47,filled:30,rate:63.8},{category:"运营类",total:34,filled:18,rate:52.9},
+    {category:"Java类",total:34,filled:32,rate:94.1},{category:"HR-BP类",total:32,filled:25,rate:78.1},
+    {category:"行政类",total:31,filled:22,rate:71.0},{category:"HR-其他类",total:30,filled:5,rate:16.7},
+    {category:"HR-招聘类",total:29,filled:22,rate:75.9},{category:"调度类",total:27,filled:20,rate:74.1},
+    {category:"技术支持类",total:25,filled:15,rate:60.0},{category:"HR-SSC类",total:23,filled:21,rate:91.3},
+    {category:"业务运维类",total:18,filled:13,rate:72.2}
+  ];
+  const fc = (r) => r>=80?'rgba(39,174,96,.7)':r>=60?'rgba(243,156,18,.7)':'rgba(231,76,60,.7)';
+  new Chart(document.getElementById('chartJobCategory'), {
+    type: 'bar',
+    data: {
+      labels: cats.map(d=>d.category),
+      datasets: [
+        {label:'编制',data:cats.map(d=>d.total),backgroundColor:'rgba(52,152,219,.5)',borderRadius:4},
+        {label:'在职',data:cats.map(d=>d.filled),backgroundColor:cats.map(d=>fc(d.rate)),borderRadius:4}
+      ]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:true,
+      indexAxis:'y',
+      plugins:{legend:{position:'top'}},
+      scales:{x:{beginAtZero:true,title:{display:true,text:'人数'}}}
+    }
+  });
+})();
+
+// 7. Job Family
+(function(){
+  const families = [
+    {family:"职能族",total:562,filled:389,rate:69.2},{family:"操作族",total:325,filled:188,rate:57.8},
+    {family:"IT族",total:128,filled:113,rate:88.3},{family:"营销族",total:120,filled:98,rate:81.7},
+    {family:"管理族",total:1,filled:1,rate:100.0}
+  ];
+  new Chart(document.getElementById('chartFamily'), {
+    type: 'pie',
+    data: {
+      labels: families.map(d=>d.family),
+      datasets: [{
+        data: families.map(d=>d.total),
+        backgroundColor: ['rgba(52,152,219,.7)','rgba(231,76,60,.7)','rgba(26,188,156,.7)','rgba(243,156,18,.7)','rgba(142,68,173,.7)']
+      }]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:true,
+      plugins:{legend:{position:'bottom'}}
+    }
+  });
+})();
+
+// 8. ABC Classification
+(function(){
+  const abc = [
+    {class:"A类(高管)",total:16,filled:15,rate:93.8},
+    {class:"B类(骨干)",total:108,filled:71,rate:65.7},
+    {class:"C类(基础)",total:1012,filled:703,rate:69.5}
+  ];
+  new Chart(document.getElementById('chartABC'), {
+    type: 'bar',
+    data: {
+      labels: abc.map(d=>d.class),
+      datasets: [
+        {label:'编制',data:abc.map(d=>d.total),backgroundColor:'rgba(52,152,219,.7)',borderRadius:4},
+        {label:'在职',data:abc.map(d=>d.filled),backgroundColor:'rgba(39,174,96,.7)',borderRadius:4}
+      ]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:true,
+      plugins:{legend:{position:'top'}},
+      scales:{y:{beginAtZero:true}}
+    }
+  });
+})();
+
+// 9. Collar
+(function(){
+  const collar = DATA.collar;
+  new Chart(document.getElementById('chartCollar'), {
+    type: 'bar',
+    data: {
+      labels: collar.map(d=>d.type),
+      datasets: [
+        {label:'编制',data:collar.map(d=>d.total),backgroundColor:'rgba(52,152,219,.5)',borderRadius:4},
+        {label:'在职',data:collar.map(d=>d.filled),backgroundColor:'rgba(39,174,96,.7)',borderRadius:4}
+      ]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:true,
+      plugins:{title:{display:true,text:'领色分布',font:{size:13}},legend:{position:'top'}},
+      scales:{y:{beginAtZero:true}}
+    }
+  });
+})();
+
+// 10. Status
+(function(){
+  const status = DATA.status_detail;
+  new Chart(document.getElementById('chartStatus'), {
+    type: 'doughnut',
+    data: {
+      labels: Object.keys(status),
+      datasets: [{
+        data: Object.values(status),
+        backgroundColor: ['rgba(39,174,96,.8)','rgba(231,76,60,.7)','rgba(243,156,18,.7)'],
+        borderWidth:2,borderColor:'#fff'
+      }]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:true,
+      plugins:{title:{display:true,text:'在岗状态',font:{size:13}},legend:{position:'bottom'}}
+    }
+  });
+})();
+
+// 11. Org Detail Table
+(function(){
+  const orgs = DATA.org_level3;
+  const rateClass = (r) => r >= 80 ? 'badge-green' : r >= 60 ? 'badge-yellow' : 'badge-red';
+  let html = `<table><thead><tr><th>组织</th><th>编制</th><th>在职</th><th>空缺</th><th>满编率</th><th>状态</th></tr></thead><tbody>`;
+  orgs.forEach(d => {
+    html += `<tr>
+      <td><strong>${d.org}</strong></td><td>${d.total}</td><td>${d.filled}</td>
+      <td>${d.total-d.filled}</td>
+      <td><span class="badge ${rateClass(d.rate)}">${d.rate}%</span></td>
+      <td>${d.rate >= 80 ? '✅ 健康' : d.rate >= 60 ? '⚠️ 关注' : '🔴 预警'}</td></tr>`;
+  });
+  html += '</tbody></table>';
+  document.getElementById('orgDetailTable').innerHTML = html;
+})();
+
+// 12. Level Detail Table
+(function(){
+  const levels = DATA.level_fill_rate;
+  const rc = (r) => r >= 80 ? 'badge-green' : r >= 60 ? 'badge-yellow' : 'badge-red';
+  let html = `<table><thead><tr><th>职级</th><th>编制</th><th>在职</th><th>空编</th><th>满编率</th><th>编制占比</th><th>管幅比</th></tr></thead><tbody>`;
+  levels.forEach(d => {
+    const contrib = (d.budget / 1136 * 100).toFixed(1);
+    html += `<tr>
+      <td><strong>${d.level}</strong></td><td>${d.budget}</td><td>${d.filled}</td>
+      <td>${d.budget-d.filled}</td>
+      <td><span class="badge ${rc(d.rate)}">${d.rate}%</span></td>
+      <td>${contrib}%</td>
+      <td>${d.level.startsWith('M')?'—':'—'}</td></tr>`;
+  });
+  html += '</tbody></table>';
+  document.getElementById('levelDetailTable').innerHTML = html;
+})();
+</script>
+</body>
+</html>
